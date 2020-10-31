@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:8
+    container_name: go-users-mysql
+    restart: on-failure
+    ports:
+      - "3306:3306"
+    volumes:
+      - go-users-mysql:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: go_db
+      MYSQL_ROOT_PASSWORD: root
+    command: [ "mysqld", "--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci" ]
+
+volumes:
+  go-users-mysql:
