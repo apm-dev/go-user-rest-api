@@ -2,6 +2,7 @@ package errors
 
 import (
 	"fmt"
+	"github.com/apm-dev/go-user-rest-api/utils/logger"
 	"net/http"
 	"reflect"
 	"regexp"
@@ -54,6 +55,11 @@ func InternalServerError(message string) *RestError {
 		Status:  http.StatusInternalServerError,
 		Error:   "INTERNAL_SERVER_ERROR",
 	}
+}
+
+func DatabaseError(err error, log string) *RestError {
+	logger.Error(log, err)
+	return InternalServerError("database error")
 }
 
 var (

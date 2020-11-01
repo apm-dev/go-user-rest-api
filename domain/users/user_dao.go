@@ -20,12 +20,12 @@ var (
 func (User) All() ([]User, *errors.RestError) {
 	stmt, err := users_db.Client.Prepare(queryGetAll)
 	if err != nil {
-		return nil, errors.InternalServerError(err.Error())
+		return nil, errors.DatabaseError(err, "error when trying to prepare select users statement")
 	}
 	defer stmt.Close()
 	rows, err := stmt.Query()
 	if err != nil {
-		return nil, errors.InternalServerError(err.Error())
+		return nil, errors.DatabaseError(err, "error when trying to get users")
 	}
 	defer rows.Close()
 
@@ -34,7 +34,7 @@ func (User) All() ([]User, *errors.RestError) {
 		var user User
 		if err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.CreatedAt,
 			&user.UpdatedAt); err != nil {
-			return nil, errors.InternalServerError(err.Error())
+			return nil, errors.DatabaseError(err, "error when trying to get users")
 		}
 		results = append(results, user)
 	}
@@ -47,7 +47,7 @@ func (User) All() ([]User, *errors.RestError) {
 func (u *User) Find() *errors.RestError {
 	stmt, err := users_db.Client.Prepare(queryFindUserById)
 	if err != nil {
-		return errors.InternalServerError(err.Error())
+		return errors.DatabaseError(err, "error when trying to prepare select(find) user statement")
 	}
 	defer stmt.Close()
 	result := stmt.QueryRow(u.ID)
@@ -57,7 +57,7 @@ func (u *User) Find() *errors.RestError {
 		if strings.Contains(err.Error(), "no rows in result") {
 			return errors.NotFound(fmt.Sprintf("user %d not found", u.ID))
 		}
-		return errors.InternalServerError(fmt.Sprintf("failed when trying to get user % d", u.ID))
+		return errors.DatabaseError(err, fmt.Sprintf("error when trying to get user %d", u.ID))
 	}
 	return nil
 }
@@ -65,18 +65,18 @@ func (u *User) Find() *errors.RestError {
 func (u *User) Insert() *errors.RestError {
 	stmt, err := users_db.Client.Prepare(queryInsertUser)
 	if err != nil {
-		return errors.InternalServerError(err.Error())
+		return errors.DatabaseError(err, "error when trying to prepare insert user statement")
 	}
 	defer stmt.Close()
 
 	insertResult, err := stmt.Exec(u.FirstName, u.LastName, u.Email, u.Password)
 	if err != nil {
-		return errors.InternalServerError(fmt.Sprintf("Error when trying to save user: %s", err.Error()))
+		return errors.DatabaseError(err, "error when trying to insert user")
 	}
 
 	userId, err := insertResult.LastInsertId()
 	if err != nil {
-		return errors.InternalServerError(fmt.Sprintf("Error when trying to get last user_id: %s", err.Error()))
+		return errors.DatabaseError(err, "Error when trying to get last user_id")
 	}
 	u.ID = userId
 	return nil
@@ -85,13 +85,13 @@ func (u *User) Insert() *errors.RestError {
 func (u *User) Update() *errors.RestError {
 	stmt, err := users_db.Client.Prepare(queryUpdateUser)
 	if err != nil {
-		return errors.InternalServerError(err.Error())
+		return errors.DatabaseError(err, "error when trying to prepare update user statement")
 	}
 	defer stmt.Close()
 	updatedAt := date_utils.GetNow()
 	_, err = stmt.Exec(u.FirstName, u.LastName, u.Email, updatedAt, u.ID)
 	if err != nil {
-		return errors.InternalServerError("Failed when trying to update user")
+		return errors.DatabaseError(err, "error when trying to update user")
 	}
 	u.UpdatedAt = updatedAt
 	return nil
@@ -100,12 +100,12 @@ func (u *User) Update() *errors.RestError {
 func (u *User) Delete() *errors.RestError {
 	stmt, err := users_db.Client.Prepare(queryDeleteUser)
 	if err != nil {
-		return errors.InternalServerError(err.Error())
+		return errors.DatabaseError(err, "error when trying to prepare delete user statement")
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(u.ID)
 	if err != nil {
-		return errors.InternalServerError(err.Error())
+		return errors.DatabaseError(err, "error when trying to delete user using id")
 	}
 	return nil
 }
